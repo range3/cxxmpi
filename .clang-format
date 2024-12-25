@@ -1,0 +1,16 @@
+---
+Language: Cpp
+BasedOnStyle: Chromium
+IncludeBlocks: Regroup
+IncludeCategories:
+  # Standard library headers come before anything else
+  - Regex: '^<[a-z_]+>'
+    Priority: -3
+  - Regex: '^<.+\.h(pp)?>'
+    Priority: -2
+  - Regex: '^<.*'
+    Priority: -1
+SpacesInContainerLiterals: false
+BreakBeforeBinaryOperators: NonAssignment
+AlignOperands: AlignAfterOperator
+...
