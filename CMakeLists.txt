@@ -7,7 +7,7 @@ project(
     VERSION 0.1.0
     DESCRIPTION "Short description"
     HOMEPAGE_URL "https://github.com/range3/cxxmpi"
-    LANGUAGES NONE
+    LANGUAGES CXX
 )
 
 include(cmake/project-is-top-level.cmake)
@@ -31,8 +31,9 @@ target_include_directories(
 
 target_compile_features(cxxmpi_cxxmpi INTERFACE cxx_std_20)
 
+find_package(MPI REQUIRED CXX)
 find_package(fmt REQUIRED)
-target_link_libraries(cxxmpi_cxxmpi INTERFACE fmt::fmt)
+target_link_libraries(cxxmpi_cxxmpi INTERFACE MPI::MPI_CXX fmt::fmt)
 
 # ---- Install rules ----
 
