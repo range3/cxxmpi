@@ -5,6 +5,7 @@
 Checks: >-
   *,
   -google-readability-todo,
+  -abseil-*,
   -altera-*,
   -fuchsia-*,
   fuchsia-multiple-inheritance,
