@@ -10,6 +10,7 @@
 auto main(int argc, char* argv[]) -> int {
   try {
     auto const universe = cxxmpi::universe(argc, argv, MPI_THREAD_MULTIPLE);
+    MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
 
     // Run tests
     const int result = Catch::Session().run(argc, argv);

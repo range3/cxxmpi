@@ -33,17 +33,25 @@ file(GLOB_RECURSE MPI_TEST_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*_mpitest.cpp")
 
 
-add_executable(cxxmpi_test
-    ${TEST_SOURCES}
+# add_executable(cxxmpi_test
+#     ${TEST_SOURCES}
+# )
+add_executable(cxxmpi_mpitest
     ${MPI_TEST_SOURCES}
-    source/cxxmpi_test_main.cpp
+    source/cxxmpi_mpitest_main.cpp
 )
+# target_link_libraries(
+#     cxxmpi_test PRIVATE
+#     cxxmpi::cxxmpi
+#     Catch2::Catch2WithMain
+# )
 target_link_libraries(
-    cxxmpi_test PRIVATE
+    cxxmpi_mpitest PRIVATE
     cxxmpi::cxxmpi
     Catch2::Catch2
 )
-target_compile_features(cxxmpi_test PRIVATE cxx_std_20)
+# target_compile_features(cxxmpi_test PRIVATE cxx_std_20)
+target_compile_features(cxxmpi_mpitest PRIVATE cxx_std_20)
 
 function(add_mpi_test TEST_NAME NUM_PROCS)
     add_test(
@@ -51,7 +59,7 @@ function(add_mpi_test TEST_NAME NUM_PROCS)
         COMMAND ${MPIEXEC_EXECUTABLE} 
                 ${MPIEXEC_NUMPROC_FLAG} ${NUM_PROCS}
                 ${MPIEXEC_PREFLAGS}
-                $<TARGET_FILE:cxxmpi_test>
+                $<TARGET_FILE:cxxmpi_mpitest>
                 [mpi]
                 ${MPIEXEC_POSTFLAGS}
     )
@@ -62,10 +70,7 @@ function(add_mpi_test TEST_NAME NUM_PROCS)
 endfunction()
 
 # Regular (non-MPI) tests
-catch_discover_tests(
-    cxxmpi_test
-    TEST_SPEC "[!mpi]" # Exclude MPI tests
-)
+# catch_discover_tests(cxxmpi_test)
 
 # MPI tests
 if(cxxmpi_ENABLE_MPI_TESTS)
