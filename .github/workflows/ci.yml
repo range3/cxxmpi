@@ -84,6 +84,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Install MPI
+      if: matrix.os == 'ubuntu-24.04'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y openmpi-bin libopenmpi-dev
+
     - name: Install vcpkg
       uses: friendlyanon/setup-vcpkg@v1
       with: { committish: "${{ env.VCPKG_COMMIT }}" }
@@ -105,6 +111,8 @@ jobs:
           halt_on_error=1"
         UBSAN_OPTIONS: "print_stacktrace=1:\
           halt_on_error=1"
+        OMPI_ALLOW_RUN_AS_ROOT: 1
+        OMPI_MCA_rmaps_base_oversubscribe: 1
       run: ctest --output-on-failure --no-tests=error -j 2
 
   test:
@@ -128,6 +136,12 @@ jobs:
         /usr/bin/clang-tidy clang-tidy
         /usr/bin/clang-tidy-18 140
 
+    - name: Install MPI
+      if: matrix.os == 'ubuntu-24.04'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y openmpi-bin libopenmpi-dev
+
     - name: Install vcpkg
       uses: friendlyanon/setup-vcpkg@v1
       with: { committish: "${{ env.VCPKG_COMMIT }}" }
@@ -150,6 +164,9 @@ jobs:
 
     - name: Test
       working-directory: build
+      env:
+        OMPI_ALLOW_RUN_AS_ROOT: 1
+        OMPI_MCA_rmaps_base_oversubscribe: 1
       run: ctest --output-on-failure --no-tests=error -C Release -j 2
 
   docs:
