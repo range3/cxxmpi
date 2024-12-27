@@ -79,7 +79,7 @@ struct comm_deleter {
 using comm_handle = std::unique_ptr<weak_comm_handle, detail::comm_deleter>;
 
 template <typename Handle = comm_handle>
-class comm {
+class basic_comm {
   Handle handle_{};
   int rank_{-1};
   int size_{-1};
@@ -87,13 +87,13 @@ class comm {
  public:
   using handle_type = Handle;
 
-  constexpr comm() noexcept = default;
-  comm(const comm& other) = delete;
-  comm(const comm& other)
+  constexpr basic_comm() noexcept = default;
+  basic_comm(const basic_comm& other) = delete;
+  basic_comm(const basic_comm& other)
     requires std::is_copy_constructible_v<Handle>
       : handle_{other.handle_}, rank_{other.rank_}, size_{other.size_} {}
-  auto operator=(const comm& other) -> comm& = delete;
-  auto operator=(const comm& other) -> comm&
+  auto operator=(const basic_comm& other) -> basic_comm& = delete;
+  auto operator=(const basic_comm& other) -> basic_comm&
     requires std::is_copy_assignable_v<Handle>
   {
     if (this != &other) {
@@ -103,18 +103,18 @@ class comm {
     }
     return *this;
   }
-  comm(comm&& other) noexcept = default;
-  auto operator=(comm&& other) noexcept -> comm& = default;
-  ~comm() = default;
+  basic_comm(basic_comm&& other) noexcept = default;
+  auto operator=(basic_comm&& other) noexcept -> basic_comm& = default;
+  ~basic_comm() = default;
 
-  constexpr explicit comm(handle_type handle)
+  constexpr explicit basic_comm(handle_type handle)
       : handle_{std::move(handle)},
         rank_{do_get_rank()},
         size_{do_get_size()} {}
 
   // split constructor
   template <typename BaseHandle>
-  comm(const comm<BaseHandle>& base, int color, int key = 0)
+  basic_comm(const basic_comm<BaseHandle>& base, int color, int key = 0)
     requires std::same_as<Handle, comm_handle>
       : handle_{create_split_comm(base, color, key)},
         rank_{do_get_rank()},
@@ -139,7 +139,7 @@ class comm {
 
  private:
   template <typename BaseHandler>
-  auto create_split_comm(const comm<BaseHandler>& base,
+  auto create_split_comm(const basic_comm<BaseHandler>& base,
                          int color,
                          int key) const -> handle_type {
     MPI_Comm new_comm;  // NOLINT
@@ -160,7 +160,8 @@ class comm {
   }
 };
 
-using weak_comm = comm<weak_comm_handle>;
+using comm = basic_comm<comm_handle>;
+using weak_comm = basic_comm<weak_comm_handle>;
 
 [[nodiscard]]
 inline auto comm_world() -> const weak_comm& {

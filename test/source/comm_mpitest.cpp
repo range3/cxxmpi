@@ -12,12 +12,12 @@ TEST_CASE("Basic comm constructor operations", "[mpi][comm][constructor]") {
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
   SECTION("Default constructor behavior") {
-    auto weak = cxxmpi::comm<cxxmpi::weak_comm_handle>{};
+    auto weak = cxxmpi::basic_comm<cxxmpi::weak_comm_handle>{};
     CHECK(weak.rank() == -1);
     CHECK(weak.size() == -1);
     CHECK(weak.native() == MPI_COMM_NULL);
 
-    auto managed = cxxmpi::comm<cxxmpi::comm_handle>{};
+    auto managed = cxxmpi::basic_comm<cxxmpi::comm_handle>{};
     CHECK(managed.rank() == -1);
     CHECK(managed.size() == -1);
     CHECK(managed.native() == MPI_COMM_NULL);
@@ -43,7 +43,7 @@ TEST_CASE("Basic comm constructor operations", "[mpi][comm][constructor]") {
   SECTION("Move construction of managed_comm") {
     // Create a managed comm via split
     const auto& world = cxxmpi::comm_world();
-    auto original = cxxmpi::comm<cxxmpi::comm_handle>{world, 0};
+    auto original = cxxmpi::basic_comm<cxxmpi::comm_handle>{world, 0};
     auto original_rank = original.rank();
     auto original_size = original.size();
     MPI_Comm original_comm = original.native();
@@ -59,7 +59,7 @@ TEST_CASE("Basic comm constructor operations", "[mpi][comm][constructor]") {
 
   SECTION("Copy assignment of weak_comm") {
     const auto& world = cxxmpi::comm_world();
-    auto copied = cxxmpi::comm<cxxmpi::weak_comm_handle>{};
+    auto copied = cxxmpi::basic_comm<cxxmpi::weak_comm_handle>{};
     copied = world;  // Copy assignment
 
     // Verify assigned properties
@@ -70,8 +70,8 @@ TEST_CASE("Basic comm constructor operations", "[mpi][comm][constructor]") {
 
   SECTION("Move assignment of managed_comm") {
     const auto& world = cxxmpi::comm_world();
-    auto original = cxxmpi::comm<cxxmpi::comm_handle>{world, 0};
-    auto target = cxxmpi::comm<cxxmpi::comm_handle>{};
+    auto original = cxxmpi::basic_comm<cxxmpi::comm_handle>{world, 0};
+    auto target = cxxmpi::basic_comm<cxxmpi::comm_handle>{};
 
     auto original_rank = original.rank();
     auto original_size = original.size();
@@ -90,7 +90,7 @@ TEST_CASE("Basic comm constructor operations", "[mpi][comm][constructor]") {
     MPI_Comm tracked_comm = MPI_COMM_NULL;
     {
       const auto& world = cxxmpi::comm_world();
-      auto managed = cxxmpi::comm<cxxmpi::comm_handle>{world, 0};
+      auto managed = cxxmpi::basic_comm<cxxmpi::comm_handle>{world, 0};
       tracked_comm = managed.native();
     }
     // After destruction, the communicator should be freed
@@ -108,7 +108,8 @@ TEST_CASE("Comm constructor error handling",
 
   SECTION("Construction with invalid comm handle") {
     auto invalid_handle = cxxmpi::weak_comm_handle{MPI_COMM_NULL};
-    CHECK_THROWS_AS(cxxmpi::comm<cxxmpi::weak_comm_handle>{invalid_handle},
-                    cxxmpi::mpi_error);
+    CHECK_THROWS_AS(
+        cxxmpi::basic_comm<cxxmpi::weak_comm_handle>{invalid_handle},
+        cxxmpi::mpi_error);
   }
 }
