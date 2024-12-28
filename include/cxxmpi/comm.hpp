@@ -80,20 +80,16 @@ using comm_handle = std::unique_ptr<weak_comm_handle, detail::comm_deleter>;
 
 template <typename Handle = comm_handle>
 class basic_comm {
-  Handle handle_{};
-  int rank_{-1};
-  int size_{-1};
-
  public:
   using handle_type = Handle;
 
   constexpr basic_comm() noexcept = default;
-  basic_comm(const basic_comm& other) = delete;
-  basic_comm(const basic_comm& other)
+  constexpr basic_comm(const basic_comm& other) = delete;
+  constexpr basic_comm(const basic_comm& other)
     requires std::is_copy_constructible_v<Handle>
       : handle_{other.handle_}, rank_{other.rank_}, size_{other.size_} {}
-  auto operator=(const basic_comm& other) -> basic_comm& = delete;
-  auto operator=(const basic_comm& other) -> basic_comm&
+  constexpr auto operator=(const basic_comm& other) -> basic_comm& = delete;
+  constexpr auto operator=(const basic_comm& other) -> basic_comm&
     requires std::is_copy_assignable_v<Handle>
   {
     if (this != &other) {
@@ -103,11 +99,19 @@ class basic_comm {
     }
     return *this;
   }
-  basic_comm(basic_comm&& other) noexcept = default;
-  auto operator=(basic_comm&& other) noexcept -> basic_comm& = default;
+  constexpr basic_comm(basic_comm&& other) noexcept = default;
+  constexpr auto operator=(basic_comm&& other) noexcept -> basic_comm& =
+                                                               default;
   ~basic_comm() = default;
 
-  constexpr explicit basic_comm(handle_type handle)
+  // comm to weak_comm
+  constexpr explicit basic_comm(const basic_comm<comm_handle>& other)
+    requires std::same_as<Handle, weak_comm_handle>
+      : handle_{weak_comm_handle{other.native()}},
+        rank_{other.rank()},
+        size_{other.size()} {}
+
+  explicit basic_comm(handle_type handle)
       : handle_{std::move(handle)},
         rank_{do_get_rank()},
         size_{do_get_size()} {}
@@ -121,12 +125,12 @@ class basic_comm {
         size_{do_get_size()} {}
 
   [[nodiscard]]
-  auto rank() const noexcept -> int {
+  constexpr auto rank() const noexcept -> int {
     return rank_;
   }
 
   [[nodiscard]]
-  auto size() const noexcept -> int {
+  constexpr auto size() const noexcept -> int {
     return size_;
   }
 
@@ -158,6 +162,10 @@ class basic_comm {
     check_mpi_result(MPI_Comm_size(native(), &size));
     return size;
   }
+
+  handle_type handle_{};
+  int rank_{-1};
+  int size_{-1};
 };
 
 using comm = basic_comm<comm_handle>;
