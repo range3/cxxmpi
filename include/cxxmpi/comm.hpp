@@ -14,11 +14,11 @@ class weak_comm_handle {
  public:
   using pointer = weak_comm_handle;
 
-  weak_comm_handle() noexcept = default;
+  constexpr weak_comm_handle() noexcept = default;
   // NOLINTNEXTLINE
   weak_comm_handle(std::nullptr_t) noexcept {}
   // NOLINTNEXTLINE
-  weak_comm_handle(MPI_Comm comm) noexcept : comm_{comm} {}
+  constexpr weak_comm_handle(MPI_Comm comm) noexcept : comm_{comm} {}
 
   [[nodiscard]]
   explicit operator bool() const noexcept {
@@ -102,7 +102,7 @@ class basic_comm {
   constexpr basic_comm(basic_comm&& other) noexcept = default;
   constexpr auto operator=(basic_comm&& other) noexcept -> basic_comm& =
                                                                default;
-  ~basic_comm() = default;
+  constexpr ~basic_comm() = default;
 
   // comm to weak_comm
   constexpr explicit basic_comm(const basic_comm<comm_handle>& other)
