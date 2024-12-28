@@ -37,9 +37,7 @@ class universe {
     }
   }
 
-  explicit universe(int& argc,
-                    char**& argv,
-                    int required = MPI_THREAD_MULTIPLE) {
+  explicit universe(int& argc, char**& argv, int required) {
     if (!is_initialized()) {
       int provided = 0;
       check_mpi_result(MPI_Init_thread(&argc, &argv, required, &provided));
