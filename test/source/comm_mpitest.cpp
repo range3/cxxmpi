@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <utility>
 
 #include <catch2/catch_test_macros.hpp>
@@ -13,20 +14,20 @@ TEST_CASE("Basic comm constructor operations", "[mpi][comm][constructor]") {
 
   SECTION("Default constructor behavior") {
     auto weak = cxxmpi::basic_comm<cxxmpi::weak_comm_handle>{};
-    CHECK(weak.rank() == -1);
-    CHECK(weak.size() == -1);
+    CHECK(weak.rank() == 0);
+    CHECK(weak.size() == 0);
     CHECK(weak.native() == MPI_COMM_NULL);
 
     auto managed = cxxmpi::basic_comm<cxxmpi::comm_handle>{};
-    CHECK(managed.rank() == -1);
-    CHECK(managed.size() == -1);
+    CHECK(managed.rank() == 0);
+    CHECK(managed.size() == 0);
     CHECK(managed.native() == MPI_COMM_NULL);
   }
 
   SECTION("Construction from MPI_COMM_WORLD") {
     const auto& world = cxxmpi::comm_world();
-    CHECK(world.rank() == rank);
-    CHECK(world.size() == size);
+    CHECK(world.rank() == static_cast<size_t>(rank));
+    CHECK(world.size() == static_cast<size_t>(size));
     CHECK(world.native() == MPI_COMM_WORLD);
   }
 
