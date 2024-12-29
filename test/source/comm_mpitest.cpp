@@ -1,10 +1,16 @@
+#include <array>
 #include <cstddef>
+#include <span>
 #include <utility>
+#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 #include <cxxmpi/comm.hpp>
 #include <cxxmpi/error.hpp>
+#include <cxxmpi/request.hpp>
 #include <mpi.h>
+
+#include "cxxmpi/dtype.hpp"
 
 TEST_CASE("Basic comm constructor operations", "[mpi][comm][constructor]") {
   int rank = 0;
@@ -112,5 +118,167 @@ TEST_CASE("Comm constructor error handling",
     CHECK_THROWS_AS(
         cxxmpi::basic_comm<cxxmpi::weak_comm_handle>{invalid_handle},
         cxxmpi::mpi_error);
+  }
+}
+
+// NOLINTNEXTLINE
+TEST_CASE("Basic Communication Tests", "[mpi]") {
+  int rank = 0;
+  int size = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  if (size < 2) {
+    SKIP("This test requires at least 2 processes");
+  }
+
+  const auto& comm = cxxmpi::comm_world();
+
+  SECTION("Basic rank and size") {
+    REQUIRE(comm.rank() == static_cast<size_t>(rank));
+    REQUIRE(comm.size() == static_cast<size_t>(size));
+  }
+
+  SECTION("Single value send/recv") {
+    if (rank == 0) {
+      const int send_val = 42;
+      comm.send(send_val, 1);
+    } else if (rank == 1) {
+      int recv_val = 0;
+      auto st = comm.recv(recv_val, 0);
+      REQUIRE(st.source() == 0);
+      REQUIRE(recv_val == 42);
+    }
+  }
+
+  SECTION("Array send/recv with status") {
+    if (rank == 0) {
+      std::array<double, 3> send_data = {1.0, 2.0, 3.0};
+      comm.send(std::span<const double>{send_data}, 1);
+    } else if (rank == 1) {
+      std::array<double, 3> recv_data = {};
+      auto st = comm.recv(std::span{recv_data}, 0);
+      REQUIRE(st.source() == 0);
+      REQUIRE(recv_data == std::array{1.0, 2.0, 3.0});
+      REQUIRE(st.count<double>() == 3);
+    }
+  }
+
+  SECTION("Vector send/recv without status") {
+    if (rank == 0) {
+      std::vector<int> send_data = {1, 2, 3, 4, 5};
+      comm.send(std::span<const int>{send_data}, 1);
+    } else if (rank == 1) {
+      std::vector<int> recv_data(5);
+      comm.recv_without_status(std::span{recv_data}, 0);
+      REQUIRE(recv_data == std::vector{1, 2, 3, 4, 5});
+    }
+  }
+}
+
+// NOLINTNEXTLINE
+TEST_CASE("Custom Datatype Communication Tests", "[mpi]") {
+  int rank = 0;
+  int size = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  if (size < 2) {
+    SKIP("This test requires at least 2 processes");
+  }
+
+  const auto& comm = cxxmpi::comm_world();
+
+  SECTION("Vector datatype") {
+    // Create a datatype for pairs of integers
+    auto vector_type = cxxmpi::dtype{cxxmpi::as_weak_dtype<int>(), 2, 1, 1};
+    vector_type.commit();
+
+    if (rank == 0) {
+      const std::array<int, 4> send_data = {1, 2, 3, 4};  // 2 pairs
+      comm.send(std::span<const int>{send_data},
+                cxxmpi::weak_dtype{vector_type}, 2, 1);
+    } else if (rank == 1) {
+      std::array<int, 4> recv_data = {};
+      auto st = comm.recv(std::span<int>{recv_data},
+                          cxxmpi::weak_dtype{vector_type}, 2, 0);
+      REQUIRE(st.source() == 0);
+      REQUIRE(recv_data == std::array{1, 2, 3, 4});
+      REQUIRE(st.count(cxxmpi::weak_dtype{vector_type}) == 2);  // 2 pairs
+    }
+  }
+}
+
+// NOLINTNEXTLINE
+TEST_CASE("Non-blocking Communication Tests", "[mpi]") {
+  int rank = 0;
+  int size = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  if (size < 2) {
+    SKIP("This test requires at least 2 processes");
+  }
+
+  const auto& comm = cxxmpi::comm_world();
+
+  SECTION("Single request send/recv") {
+    if (rank == 0) {
+      const int send_val = 42;
+      MPI_Request request = MPI_REQUEST_NULL;
+      comm.isend(send_val, 1, 0, request);
+
+      MPI_Wait(&request, MPI_STATUS_IGNORE);
+    } else if (rank == 1) {
+      int recv_val = 0;
+      MPI_Request request = MPI_REQUEST_NULL;
+      comm.irecv(recv_val, 0, 0, request);
+
+      cxxmpi::status st;
+      MPI_Wait(&request, &st.native());
+      REQUIRE(recv_val == 42);
+      REQUIRE(st.source() == 0);
+    }
+  }
+
+  SECTION("Multiple requests with request_group") {
+    if (rank == 0) {
+      std::array<int, 3> send_data = {1, 2, 3};
+      cxxmpi::request_group requests;
+
+      // Send data to all other processes
+      for (int i = 1; i < size; ++i) {
+        comm.isend(std::span<const int>{send_data}, i, 0, requests.add());
+      }
+
+      requests.wait_all_without_status();
+    } else {
+      std::array<int, 3> recv_data = {};
+      cxxmpi::request_group requests;
+
+      MPI_Request& req = requests.add();
+      comm.irecv(std::span{recv_data}, 0, 0, req);
+
+      auto statuses = requests.wait_all();
+      REQUIRE(statuses.size() == 1);
+      REQUIRE(statuses[0].source() == 0);
+      REQUIRE(recv_data == std::array{1, 2, 3});
+    }
+  }
+}
+
+// NOLINTNEXTLINE
+TEST_CASE("Error Handling Tests", "[mpi]") {
+  int rank = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  const auto& comm = cxxmpi::comm_world();
+
+  SECTION("Invalid rank send") {
+    if (rank == 0) {
+      const int val = 42;
+      REQUIRE_THROWS_AS(comm.send(val, static_cast<int>(comm.size())),
+                        cxxmpi::mpi_error);
+    }
   }
 }

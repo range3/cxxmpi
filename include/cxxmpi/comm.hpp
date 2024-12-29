@@ -1,12 +1,27 @@
 #pragma once
 
+#include <cstddef>
 #include <memory>
+#include <span>
 
 #include <mpi.h>
 
-#include "error.hpp"
+#include "cxxmpi/dtype.hpp"
+#include "cxxmpi/error.hpp"
+#include "cxxmpi/request.hpp"
+#include "cxxmpi/status.hpp"
 
 namespace cxxmpi {
+
+namespace detail {
+
+template <typename T>
+concept is_std_span = requires {
+  typename T::element_type;
+  { T::extent } -> std::convertible_to<std::size_t>;
+} && std::same_as<T, std::span<typename T::element_type, T::extent>>;
+
+}  // namespace detail
 
 class weak_comm_handle {
   MPI_Comm comm_{MPI_COMM_NULL};
@@ -139,11 +154,148 @@ class basic_comm {
     return size_;
   }
 
-  void barrier() const { check_mpi_result(MPI_Barrier(native())); }
-
   [[nodiscard]]
   constexpr auto native() const noexcept -> MPI_Comm {
     return handle_->native();
+  }
+
+  void barrier() const { check_mpi_result(MPI_Barrier(native())); }
+
+  // Blocking send - custom datatype with count
+  template <typename T, size_t Extent>
+  void send(std::span<const T, Extent> data,
+            const weak_dtype& data_type,
+            int count,
+            int dest,
+            int tag = 0) const {
+    check_mpi_result(
+        MPI_Send(data.data(), count, data_type.native(), dest, tag, native()));
+  }
+
+  // Blocking send - builtin datatype with count
+  template <typename T, size_t Extent>
+  void send(std::span<const T, Extent> data, int dest, int tag = 0) const {
+    send(data, as_weak_dtype<T>(), static_cast<int>(data.size()), dest, tag);
+  }
+
+  // Blocking receive - custom datatype with count
+  template <typename T, size_t Extent>
+  auto recv(std::span<T, Extent> data,
+            const weak_dtype& data_type,
+            int count,
+            int source,
+            int tag = 0) const -> status {
+    status st;
+    check_mpi_result(MPI_Recv(data.data(), count, data_type.native(), source,
+                              tag, native(), &st.native()));
+    return st;
+  }
+
+  template <typename T, size_t Extent>
+  void recv_without_status(std::span<T, Extent> data,
+                           const weak_dtype& data_type,
+                           int count,
+                           int source,
+                           int tag = 0) const {
+    check_mpi_result(MPI_Recv(data.data(), count, data_type.native(), source,
+                              tag, native(), MPI_STATUS_IGNORE));
+  }
+
+  // Blocking receive - builtin datatype with count
+  template <typename T, size_t Extent>
+  auto recv(std::span<T, Extent> data,
+            int source,
+            int tag = 0) const -> status {
+    return recv(data, as_weak_dtype<T>(), static_cast<int>(data.size()), source,
+                tag);
+  }
+
+  template <typename T, size_t Extent>
+  void recv_without_status(std::span<T, Extent> data,
+                           int source,
+                           int tag = 0) const {
+    recv_without_status(data, as_weak_dtype<T>(), static_cast<int>(data.size()),
+                        source, tag);
+  }
+
+  // Non-blocking send - custom datatype with count
+  template <typename T, size_t Extent>
+  void isend(std::span<const T, Extent> data,
+             const weak_dtype& data_type,
+             int count,
+             int dest,
+             int tag,
+             MPI_Request& request) const {
+    check_mpi_result(MPI_Isend(data.data(), count, data_type.native(), dest,
+                               tag, native(), &request));
+  }
+
+  // Non-blocking send - builtin datatype with count
+  template <typename T, size_t Extent>
+  void isend(std::span<const T, Extent> data,
+             int dest,
+             int tag,
+             MPI_Request& request) const {
+    isend(data, as_weak_dtype<T>(), static_cast<int>(data.size()), dest, tag,
+          request);
+  }
+
+  // Non-blocking receive - custom datatype with count
+  template <typename T, size_t Extent>
+  void irecv(std::span<T, Extent> data,
+             const weak_dtype& data_type,
+             int count,
+             int source,
+             int tag,
+             MPI_Request& request) const {
+    check_mpi_result(MPI_Irecv(data.data(), count, data_type.native(), source,
+                               tag, native(), &request));
+  }
+
+  // Non-blocking receive - builtin datatype with count
+  template <typename T, size_t Extent>
+  void irecv(std::span<T, Extent> data,
+             int source,
+             int tag,
+             MPI_Request& request) const {
+    irecv(data, as_weak_dtype<T>(), static_cast<int>(data.size()), source, tag,
+          request);
+  }
+
+  // Single value overloads
+  template <typename T>
+  void send(const T& value, int dest, int tag = 0) const
+    requires(!detail::is_std_span<T>)
+  {
+    send(std::span<const T, 1>(&value, 1), dest, tag);
+  }
+
+  template <typename T>
+  auto recv(T& value, int source, int tag = 0) const -> status
+    requires(!detail::is_std_span<T>)
+  {
+    return recv(std::span<T, 1>(&value, 1), source, tag);
+  }
+
+  template <typename T>
+  void recv_without_status(T& value, int source, int tag = 0) const
+    requires(!detail::is_std_span<T>)
+  {
+    recv_without_status(std::span<T, 1>(&value, 1), source, tag);
+  }
+
+  template <typename T>
+  void isend(const T& value, int dest, int tag, MPI_Request& request) const
+    requires(!detail::is_std_span<T>)
+  {
+    isend(std::span<const T, 1>(&value, 1), dest, tag, request);
+  }
+
+  template <typename T>
+  void irecv(T& value, int source, int tag, MPI_Request& request) const
+    requires(!detail::is_std_span<T>)
+  {
+    irecv(std::span<T, 1>(&value, 1), source, tag, request);
   }
 
  private:
