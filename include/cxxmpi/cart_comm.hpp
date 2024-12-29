@@ -60,6 +60,64 @@ class basic_cart_comm : public basic_comm<Handle> {
       : basic_cart_comm{base, std::span{dims.begin(), dims.size()},
                         std::span{periods.begin(), periods.size()}, reorder} {}
 
+  [[nodiscard]]
+  auto ndims() const -> std::size_t {
+    int ndims = 0;
+    check_mpi_result(MPI_Cartdim_get(this->native(), &ndims));
+    return static_cast<size_t>(ndims);
+  }
+
+  [[nodiscard]]
+  auto coords(size_t rank) const -> std::vector<int> {
+    std::vector<int> coords(ndims());
+    check_mpi_result(MPI_Cart_coords(this->native(), static_cast<int>(rank),
+                                     static_cast<int>(coords.size()),
+                                     coords.data()));
+    return coords;
+  }
+
+  [[nodiscard]]
+  auto coords() const -> std::vector<int> {
+    return coords(this->rank());
+  }
+
+  using basic_comm<Handle>::rank;
+
+  [[nodiscard]]
+  auto rank(std::span<const int> coords) const -> size_t {
+    int rank = 0;
+    check_mpi_result(MPI_Cart_rank(this->native(), coords.data(), &rank));
+    return static_cast<size_t>(rank);
+  }
+
+  [[nodiscard]]
+  auto rank(std::initializer_list<int> coords) const -> size_t {
+    return rank(std::span{coords.begin(), coords.size()});
+  }
+
+  // Get ranks of neighboring processes
+  [[nodiscard]]
+  auto shift(int direction, int disp) const -> std::pair<size_t, size_t> {
+    int source, dest;  // NOLINT
+    check_mpi_result(
+        MPI_Cart_shift(this->native(), direction, disp, &source, &dest));
+    return {source, dest};
+  }
+
+  struct neighbors_2d {
+    size_t up;
+    size_t down;
+    size_t left;
+    size_t right;
+  };
+
+  [[nodiscard]]
+  auto neighbors_2d() const -> neighbors_2d {
+    auto [up, down] = shift(0, 1);
+    auto [left, right] = shift(1, 1);
+    return {up, down, left, right};
+  }
+
  private:
   template <typename BaseHandle>
   static auto create_cart_comm(const basic_comm<BaseHandle>& base,
