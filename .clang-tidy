@@ -20,6 +20,7 @@ Checks: >-
   -readability-identifier-length,
   -readability-function-cognitive-complexita,
   -bugprone-argument-comment,
+  -bugprone-easily-swappable-parameters,
 
 WarningsAsErrors: ''
 CheckOptions:
