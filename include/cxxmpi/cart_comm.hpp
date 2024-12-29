@@ -68,6 +68,20 @@ class basic_cart_comm : public basic_comm<Handle> {
   }
 
   [[nodiscard]]
+  auto dims() const -> std::vector<int> {
+    auto const num_dims = ndims();
+
+    auto dims = std::vector<int>(num_dims);
+    auto periods = std::vector<int>(num_dims);
+    auto coords = std::vector<int>(num_dims);
+
+    check_mpi_result(MPI_Cart_get(this->native(), static_cast<int>(num_dims),
+                                  dims.data(), periods.data(), coords.data()));
+
+    return dims;
+  }
+
+  [[nodiscard]]
   auto coords(size_t rank) const -> std::vector<int> {
     std::vector<int> coords(ndims());
     check_mpi_result(MPI_Cart_coords(this->native(), static_cast<int>(rank),
