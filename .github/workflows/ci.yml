@@ -79,6 +79,8 @@ jobs:
 
     runs-on: ubuntu-24.04
 
+    if: false # Enable this job by deleting this line
+
     env: { CXX: clang++-18 }
 
     steps:
