@@ -42,6 +42,11 @@ class weak_comm_handle {
   }
 
   [[nodiscard]]
+  constexpr auto native() noexcept -> MPI_Comm& {
+    return comm_;
+  }
+
+  [[nodiscard]]
   constexpr auto get() const noexcept -> pointer {
     return *this;
   }
