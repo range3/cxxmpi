@@ -13,6 +13,13 @@
 
 namespace cxxmpi {
 
+struct neighbors_2d {
+  int up;
+  int down;
+  int left;
+  int right;
+};
+
 template <typename Handle = comm_handle>
 class basic_cart_comm : public basic_comm<Handle> {
  public:
@@ -116,13 +123,6 @@ class basic_cart_comm : public basic_comm<Handle> {
         MPI_Cart_shift(this->native(), direction, disp, &source, &dest));
     return {source, dest};
   }
-
-  struct neighbors_2d {
-    int up;
-    int down;
-    int left;
-    int right;
-  };
 
   [[nodiscard]]
   auto neighbors_2d() const -> neighbors_2d {
