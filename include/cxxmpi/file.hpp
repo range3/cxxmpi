@@ -143,13 +143,12 @@ class basic_file {
                                        as_builtin_datatype<T>(), status));
   }
 
-  template <typename T, std::size_t Extent>
   void write_at(MPI_Offset offset,
-                std::span<const T, Extent> data,
+                const void* data,
+                int count,
                 const weak_dtype& dtype,
                 MPI_Status* status = MPI_STATUS_IGNORE) {
-    check_mpi_result(MPI_File_write_at(native(), offset, data.data(),
-                                       static_cast<int>(data.size()),
+    check_mpi_result(MPI_File_write_at(native(), offset, data, count,
                                        dtype.native(), status));
   }
 
@@ -162,13 +161,12 @@ class basic_file {
                                       as_builtin_datatype<T>(), status));
   }
 
-  template <typename T, std::size_t Extent>
   void read_at(MPI_Offset offset,
-               std::span<T, Extent> data,
+               const void* data,
+               int count,
                const weak_dtype& dtype,
                MPI_Status* status = MPI_STATUS_IGNORE) {
-    check_mpi_result(MPI_File_read_at(native(), offset, data.data(),
-                                      static_cast<int>(data.size()),
+    check_mpi_result(MPI_File_read_at(native(), offset, data, count,
                                       dtype.native(), status));
   }
 
@@ -181,13 +179,12 @@ class basic_file {
                                            as_builtin_datatype<T>(), status));
   }
 
-  template <typename T, std::size_t Extent>
   void write_at_all(MPI_Offset offset,
-                    std::span<const T, Extent> data,
+                    const void* data,
+                    int count,
                     const weak_dtype& dtype,
                     MPI_Status* status = MPI_STATUS_IGNORE) {
-    check_mpi_result(MPI_File_write_at_all(native(), offset, data.data(),
-                                           static_cast<int>(data.size()),
+    check_mpi_result(MPI_File_write_at_all(native(), offset, data, count,
                                            dtype.native(), status));
   }
 
@@ -200,13 +197,12 @@ class basic_file {
                                           as_builtin_datatype<T>(), status));
   }
 
-  template <typename T, std::size_t Extent>
   void read_at_all(MPI_Offset offset,
-                   std::span<T, Extent> data,
+                   const void* data,
+                   int count,
                    const weak_dtype& dtype,
                    MPI_Status* status = MPI_STATUS_IGNORE) {
-    check_mpi_result(MPI_File_read_at_all(native(), offset, data.data(),
-                                          static_cast<int>(data.size()),
+    check_mpi_result(MPI_File_read_at_all(native(), offset, data, count,
                                           dtype.native(), status));
   }
 
