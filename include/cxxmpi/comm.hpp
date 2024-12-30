@@ -145,7 +145,7 @@ class basic_comm {
         size_{do_get_size()} {}
 
   [[nodiscard]]
-  constexpr auto rank() const noexcept -> size_t {
+  constexpr auto rank() const noexcept -> int {
     return rank_;
   }
 
@@ -308,10 +308,10 @@ class basic_comm {
     return comm_handle{weak_comm_handle{new_comm}};
   }
 
-  auto do_get_rank() const -> size_t {
-    int rank{};
+  auto do_get_rank() const -> int {
+    int rank = MPI_PROC_NULL;
     check_mpi_result(MPI_Comm_rank(native(), &rank));
-    return static_cast<size_t>(rank);
+    return rank;
   }
 
   auto do_get_size() const -> size_t {
@@ -321,7 +321,7 @@ class basic_comm {
   }
 
   handle_type handle_{};
-  size_t rank_{};
+  int rank_{};
   size_t size_{};
 };
 
