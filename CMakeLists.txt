@@ -32,8 +32,7 @@ target_include_directories(
 target_compile_features(cxxmpi_cxxmpi INTERFACE cxx_std_20)
 
 find_package(MPI REQUIRED CXX)
-find_package(fmt REQUIRED)
-target_link_libraries(cxxmpi_cxxmpi INTERFACE MPI::MPI_CXX fmt::fmt)
+target_link_libraries(cxxmpi_cxxmpi INTERFACE MPI::MPI_CXX)
 
 # ---- Install rules ----
 

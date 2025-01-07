@@ -6,7 +6,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <cxxmpi/dtype.hpp>
 #include <cxxmpi/error.hpp>
-#include <fmt/core.h>
 #include <mpi.h>
 
 TEST_CASE("MPI Datatype basic operations", "[mpi][dtype]") {

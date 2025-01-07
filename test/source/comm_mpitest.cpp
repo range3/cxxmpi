@@ -32,7 +32,7 @@ TEST_CASE("Basic comm constructor operations", "[mpi][comm][constructor]") {
 
   SECTION("Construction from MPI_COMM_WORLD") {
     const auto& world = cxxmpi::comm_world();
-    CHECK(world.rank() == static_cast<size_t>(rank));
+    CHECK(world.rank() == rank);
     CHECK(world.size() == static_cast<size_t>(size));
     CHECK(world.native() == MPI_COMM_WORLD);
   }
