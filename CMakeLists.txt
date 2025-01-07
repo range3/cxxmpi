@@ -4,7 +4,7 @@ include(cmake/prelude.cmake)
 
 project(
     cxxmpi
-    VERSION 0.1.2
+    VERSION 0.1.3
     DESCRIPTION "Short description"
     HOMEPAGE_URL "https://github.com/range3/cxxmpi"
     LANGUAGES CXX
