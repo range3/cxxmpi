@@ -16,6 +16,9 @@
 namespace cxxmpi {
 
 template <typename T>
+constexpr bool always_false_v = false;
+
+template <typename T>
 [[nodiscard]] constexpr auto as_builtin_datatype() noexcept -> MPI_Datatype {
   if constexpr (std::is_same_v<T, char>) {
     return MPI_CHAR;
@@ -48,7 +51,8 @@ template <typename T>
   } else if constexpr (std::is_same_v<T, std::byte>) {
     return MPI_BYTE;
   } else {
-    static_assert(false, "Unsupported builtin type for MPI communication");
+    static_assert(always_false_v<T>,
+                  "Unsupported builtin type for MPI communication");
   }
 }
 
@@ -269,7 +273,8 @@ constexpr auto as_weak_dtype() noexcept -> weak_dtype {
 
 template <typename T>
 struct dtype_traits {
-  static_assert(false, "No MPI datatype conversion available for this type");
+  static_assert(always_false_v<T>,
+                "No MPI datatype conversion available for this type");
   static auto create(const T&) -> dtype;
 };
 
