@@ -4,7 +4,7 @@ include(cmake/prelude.cmake)
 
 project(
     cxxmpi
-    VERSION 0.1.5
+    VERSION 0.1.6
     DESCRIPTION "Modern C++ wrapper for MPI"
     HOMEPAGE_URL "https://github.com/range3/cxxmpi"
     LANGUAGES CXX

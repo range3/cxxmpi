@@ -1,6 +1,6 @@
 {
   "name": "cxxmpi",
-  "version-semver": "0.1.5",
+  "version-semver": "0.1.6",
   "dependencies": [],
   "default-features": [],
   "features": {
