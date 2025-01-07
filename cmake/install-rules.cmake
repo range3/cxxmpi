@@ -35,7 +35,7 @@ write_basic_package_version_file(
 
 # Allow package maintainers to freely override the path for the configs
 set(
-    cxxmpi_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/${package}"
+    cxxmpi_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/${package}"
     CACHE STRING "CMake package config location relative to the install prefix"
 )
 set_property(CACHE cxxmpi_INSTALL_CMAKEDIR PROPERTY TYPE PATH)
