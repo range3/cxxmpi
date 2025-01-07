@@ -1,7 +1,6 @@
 #pragma once
 
 #include <array>
-#include <format>
 #include <source_location>
 #include <string>
 #include <system_error>
@@ -28,8 +27,8 @@ class error_category : public std::error_category {
     auto length = int{};
     if (auto const ret = MPI_Error_string(ev, error_string.data(), &length);
         ret != MPI_SUCCESS) {
-      return std::format("Failed to get MPI error message for error code: {}",
-                         ev);
+      return "Failed to get MPI error message for error code: "
+           + std::to_string(ev);
     }
     return {error_string.data(), static_cast<size_t>(length)};
   }
@@ -81,9 +80,9 @@ class mpi_error : public std::system_error {
   static auto create_what_message(int error_code,
                                   const std::source_location& loc)
       -> std::string {
-    return std::format("{}:{} in {}: {}", loc.file_name(), loc.line(),
-                       loc.function_name(),
-                       make_error_code(error_code).message());
+    return std::string{loc.file_name()} + ":" + std::to_string(loc.line())
+         + " in " + loc.function_name() + ": "
+         + make_error_code(error_code).message();
   }
 };
 
